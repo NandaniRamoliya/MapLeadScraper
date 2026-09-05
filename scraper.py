@@ -83,7 +83,13 @@ class GoogleMapsScraper:
                 print(f"📥 Found {len(articles)} business cards in page source. Parsing details...")
 
                 # Detail Extraction Loop
-                for article in articles[:max_results]:
+                print(f"📥 Extracting deep contact details for top {max_results} listings...")
+                
+                # Re-locate elements dynamically
+                locators = page.locator("div[role='article'] a.hfLiAc, div.Nv2PK a[href*='/maps/place/']")
+                count = await locators.count()
+                
+                for i in range(min(count, max_results)):
                     name = ""
                     rating = ""
                     reviews_count = ""
@@ -92,50 +98,71 @@ class GoogleMapsScraper:
                     website = ""
                     maps_url = ""
 
-                    # Name
-                    title_elem = article.find("div", class_=re.compile(r"fontHeadlineSmall|qBF1Pd|header")) or article.find("a", class_=re.compile(r"hfLiAc"))
-                    if title_elem:
-                        name = title_elem.get_text(strip=True)
+                    try:
+                        item = locators.nth(i)
+                        # Scroll item into view and click to open side panel
+                        await item.scroll_into_view_if_needed()
+                        await item.click()
+                        await page.wait_for_timeout(1500)
 
-                    # Link / Maps URL
-                    link_elem = article.find("a", href=re.compile(r"/maps/place/"))
-                    if link_elem and link_elem.get("href"):
-                        maps_url = link_elem["href"]
-                        if not maps_url.startswith("http"):
-                            maps_url = "https://www.google.com" + maps_url
+                        # Parse side pane details
+                        pane_html = await page.content()
+                        pane_soup = BeautifulSoup(pane_html, "html.parser")
 
-                    # Rating & Reviews
-                    aria_elem = article.find(attrs={"aria-label": re.compile(r"stars|rating", re.I)})
-                    if aria_elem and aria_elem.get("aria-label"):
-                        aria_text = aria_elem["aria-label"]
-                        rating_match = re.search(r"(\d+\.\d+|\d+)\s*stars?", aria_text, re.I)
-                        reviews_match = re.search(r"(\d+)\s*Reviews?", aria_text, re.I)
-                        if rating_match:
-                            rating = rating_match.group(1)
-                        if reviews_match:
-                            reviews_count = reviews_match.group(1)
+                        # Title
+                        h1_elem = pane_soup.find("h1", class_=re.compile(r"DUwfdc|fontTitleLarge"))
+                        if h1_elem:
+                            name = h1_elem.get_text(strip=True)
 
-                    # Text details (Phone, Address, Website)
-                    body_text = article.get_text(separator=" | ", strip=True)
+                        # Phone button / link
+                        phone_btn = pane_soup.find("button", attrs={"data-item-id": re.compile(r"phone", re.I)}) or \
+                                    pane_soup.find(attrs={"aria-label": re.compile(r"Phone:\s*[\d\+\s-]+", re.I)})
+                        if phone_btn:
+                            phone_label = phone_btn.get("aria-label", "") or phone_btn.get_text(strip=True)
+                            phone_match = re.search(r"(\+?\d{1,4}[\s-]?\(?\d{2,5}\)?[\s-]?\d{3,5}[\s-]?\d{3,5})", phone_label)
+                            if phone_match:
+                                phone = phone_match.group(1).strip()
+                            else:
+                                phone = phone_label.replace("Phone:", "").strip()
 
-                    # Phone Extraction Regex
-                    phone_match = re.search(r"(\+?\d{1,4}[\s-]?\(?\d{2,5}\)?[\s-]?\d{3,5}[\s-]?\d{3,5})", body_text)
-                    if phone_match:
-                        phone = phone_match.group(1).strip()
+                        # Website button / link
+                        web_btn = pane_soup.find("a", attrs={"data-item-id": re.compile(r"authority", re.I)}) or \
+                                  pane_soup.find("a", attrs={"aria-label": re.compile(r"Website:", re.I)})
+                        if web_btn and web_btn.get("href"):
+                            href = web_btn["href"]
+                            if "google.com" not in href:
+                                website = href
 
-                    # Website link inside card
-                    web_elem = article.find("a", attrs={"data-value": re.compile(r"Website|website", re.I)}) or article.find("a", href=re.compile(r"http(s)?://"))
-                    if web_elem and web_elem.get("href"):
-                        href = web_elem["href"]
-                        if "google.com" not in href and "google.co.in" not in href:
-                            website = href
+                        # Address
+                        addr_btn = pane_soup.find("button", attrs={"data-item-id": re.compile(r"address", re.I)}) or \
+                                   pane_soup.find(attrs={"aria-label": re.compile(r"Address:", re.I)})
+                        if addr_btn:
+                            address = addr_btn.get("aria-label", "").replace("Address:", "").strip() or addr_btn.get_text(strip=True)
 
-                    if name:
+                        # Rating & Reviews
+                        rating_elem = pane_soup.find("div", class_=re.compile(r"F7L8d|fontBodyMedium"))
+                        if rating_elem:
+                            rating_text = rating_elem.get_text(strip=True)
+                            r_match = re.search(r"(\d+\.\d+|\d+)", rating_text)
+                            if r_match:
+                                rating = r_match.group(1)
+
+                        # Fallback for phone from text if pane search missed
+                        if not phone:
+                            text_body = pane_soup.get_text(separator=" ", strip=True)
+                            phone_match = re.search(r"(\+91\s*[\d\s-]{10,12}|0?\d{10}|\+?\d{1,4}[\s-]?\d{10})", text_body)
+                            if phone_match:
+                                phone = phone_match.group(1).strip()
+
+                    except Exception as err:
+                        print(f"⚠️ Error extracting details for card #{i+1}: {err}")
+
+                    if name or phone:
                         raw_leads.append({
-                            "name": name,
+                            "name": name or f"Business Lead #{i+1}",
                             "phone": phone,
                             "website": website,
-                            "address": body_text,
+                            "address": address,
                             "rating": rating,
                             "reviews_count": reviews_count,
                             "maps_url": maps_url
