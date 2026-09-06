@@ -1,4 +1,4 @@
-import argparse
+﻿import argparse
 import sys
 import time
 from scraper import run_scraper_sync
@@ -62,7 +62,7 @@ def main():
         raw_leads, category, location
     )
 
-    # Step 3: Export to Excel and CSV
+    # Step 3: Export to CSV
     export_files = LeadExporter.export_to_files(
         website_pitch_leads, automation_pitch_leads, category, location
     )
@@ -79,12 +79,11 @@ def main():
     print(f"🤖 Automation & Social Pitch   : {len(automation_pitch_leads)}")
     print(f"⏱️  Time Elapsed               : {elapsed_time}s")
     print("-" * 60)
-    print("📁 EXPORTED FILES:")
-    print(f"  🟢 Excel Workbook: {export_files['excel']}")
+    print("📁 EXPORTED CSV FILES:")
     if export_files['website_csv']:
-        print(f"  📄 Website Pitch CSV: {export_files['website_csv']}")
+        print(f"  📄 Website Pitch CSV    : {export_files['website_csv']}")
     if export_files['automation_csv']:
-        print(f"  📄 Automation Pitch CSV: {export_files['automation_csv']}")
+        print(f"  📄 Automation Pitch CSV : {export_files['automation_csv']}")
     print("=" * 60)
 
 if __name__ == "__main__":

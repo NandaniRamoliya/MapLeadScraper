@@ -1,4 +1,4 @@
-# Python
+﻿# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -15,8 +15,8 @@ venv.bak/
 .playwright/
 
 # Project Outputs
-output/*.xlsx
 output/*.csv
+output/*.xlsx
 !output/.gitkeep
 
 # IDEs & System
