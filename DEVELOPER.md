@@ -25,15 +25,6 @@ D:\MapLeadScraper\
 
 ## ⚙️ 1. Virtual Environment Setup (`.venv`)
 
-### Create Virtual Environment
-```powershell
-# Using standard Python
-python -m venv .venv
-
-# Or using uv (ultra-fast installer)
-uv venv .venv
-```
-
 ### Activate Virtual Environment
 ```powershell
 # PowerShell (Windows)
@@ -46,20 +37,20 @@ uv venv .venv
 source .venv/bin/activate
 ```
 
-> **PowerShell Execution Policy Fix** (if activation is blocked):
+> 💡 **If PowerShell script execution is disabled on your system**:
+> Run this one-time PowerShell command to allow script activation:
 > ```powershell
 > Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 > ```
 
+### Run Main Script Directly (Without Activating venv)
+```powershell
+.venv\Scripts\python.exe main.py
+```
+
 ### Deactivate Virtual Environment
 ```powershell
 deactivate
-```
-
-### Install / Update Dependencies
-```powershell
-pip install -r requirements.txt
-python -m playwright install chromium
 ```
 
 ---
@@ -129,9 +120,6 @@ python -m playwright install chromium
 
 ## 🌿 4. Git Cheatsheet (Fetch, Push, Merge, Pull, Rebase)
 
-> Note: Using PortableGit path if standard `git` command is not in system PATH:
-> `& "C:\Users\nanda\PortableGit\cmd\git.exe"`
-
 ### Basic Git Commands
 
 #### Check Repository Status
@@ -179,18 +167,4 @@ git checkout main
 git checkout main
 git merge feature/new-scraper-feature
 git push origin main
-```
-
-#### Handle Rebase Conflicts (if remote updated)
-```powershell
-git pull origin main --rebase
-# Resolve any file conflicts, then:
-git add .
-git rebase --continue
-git push origin main
-```
-
-#### View Commit History
-```powershell
-git log --oneline -n 10
 ```
