@@ -5,6 +5,13 @@ import pandas as pd
 from config import OUTPUT_DIR
 
 class LeadExporter:
+    DEFAULT_COLUMNS = [
+        "Business Name", "Category", "Location", "Phone Number",
+        "Has Official Website", "Website URL", "Social Profile URL",
+        "Google Rating", "Reviews Count", "Full Address",
+        "Google Maps URL", "Lead Classification", "Outreach Pitch Copy"
+    ]
+
     @staticmethod
     def sanitize_filename(name: str) -> str:
         """Sanitizes text for safe filename generation."""
@@ -19,8 +26,8 @@ class LeadExporter:
         location: str
     ) -> Dict[str, str]:
         """
-        Exports categorized leads into CSV files ONLY.
-        Returns dictionary of created CSV file paths.
+        Exports categorized leads into BOTH CSV files (Website Pitch & Automation Pitch).
+        Always creates both files even if one category has 0 leads.
         """
         cat_str = cls.sanitize_filename(category)
         loc_str = cls.sanitize_filename(location)
@@ -29,17 +36,14 @@ class LeadExporter:
         website_csv_path = OUTPUT_DIR / f"{file_prefix}_website_pitch.csv"
         automation_csv_path = OUTPUT_DIR / f"{file_prefix}_automation_pitch.csv"
 
-        df_website = pd.DataFrame(website_pitch_leads)
-        df_automation = pd.DataFrame(automation_pitch_leads)
+        df_website = pd.DataFrame(website_pitch_leads) if website_pitch_leads else pd.DataFrame(columns=cls.DEFAULT_COLUMNS)
+        df_automation = pd.DataFrame(automation_pitch_leads) if automation_pitch_leads else pd.DataFrame(columns=cls.DEFAULT_COLUMNS)
 
-        # Export CSV files ONLY
-        if not df_website.empty:
-            df_website.to_csv(website_csv_path, index=False, encoding="utf-8-sig")
-
-        if not df_automation.empty:
-            df_automation.to_csv(automation_csv_path, index=False, encoding="utf-8-sig")
+        # Export BOTH CSV files ALWAYS
+        df_website.to_csv(website_csv_path, index=False, encoding="utf-8-sig")
+        df_automation.to_csv(automation_csv_path, index=False, encoding="utf-8-sig")
 
         return {
-            "website_csv": str(website_csv_path) if not df_website.empty else None,
-            "automation_csv": str(automation_csv_path) if not df_automation.empty else None
+            "website_csv": str(website_csv_path),
+            "automation_csv": str(automation_csv_path)
         }

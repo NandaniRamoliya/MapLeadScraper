@@ -10,22 +10,22 @@ def main():
         description="🚀 Web Scraper & Lead Categorizer for Sales & Agency Outreach"
     )
     parser.add_argument(
+        "-c", "--category",
+        type=str,
+        default=None,
+        help="Business category (e.g. Salon, Spa, Dentist, Restaurant). Required."
+    )
+    parser.add_argument(
         "-l", "--location",
         type=str,
         default="Gujarat",
-        help="Target location/city/state (e.g. Gujarat, Ahmedabad, Surat)"
-    )
-    parser.add_argument(
-        "-c", "--category",
-        type=str,
-        default="Salon",
-        help="Business category (e.g. Salon, Spa, Dentist, Restaurant)"
+        help="Target location/city/state (default: Gujarat)"
     )
     parser.add_argument(
         "-m", "--max-results",
         type=int,
-        default=20,
-        help="Maximum number of business leads to extract (default: 20)"
+        default=30,
+        help="Maximum number of business leads to extract (default: 30)"
     )
     parser.add_argument(
         "--no-headless",
@@ -34,8 +34,21 @@ def main():
     )
 
     args = parser.parse_args()
-    location = args.location.strip()
-    category = args.category.strip()
+
+    # Category handling: Require input if not provided via CLI flag
+    category = args.category.strip() if args.category else ""
+    if not category:
+        try:
+            category = input("🏷️ Enter target business category (e.g. Salon, Spa, Dentist): ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\n❌ Cancelled.")
+            sys.exit(0)
+
+    if not category:
+        print("❌ Error: Category is required to perform search.")
+        sys.exit(1)
+
+    location = args.location.strip() if args.location else "Gujarat"
     max_results = args.max_results
     headless = not args.no_headless
 
@@ -80,10 +93,8 @@ def main():
     print(f"⏱️  Time Elapsed               : {elapsed_time}s")
     print("-" * 60)
     print("📁 EXPORTED CSV FILES:")
-    if export_files['website_csv']:
-        print(f"  📄 Website Pitch CSV    : {export_files['website_csv']}")
-    if export_files['automation_csv']:
-        print(f"  📄 Automation Pitch CSV : {export_files['automation_csv']}")
+    print(f"  📄 Website Pitch CSV    : {export_files['website_csv']}")
+    print(f"  📄 Automation Pitch CSV : {export_files['automation_csv']}")
     print("=" * 60)
 
 if __name__ == "__main__":
