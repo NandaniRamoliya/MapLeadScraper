@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -13,6 +13,7 @@ venv.bak/
 
 # Playwright & Browsers
 .playwright/
+.wpp_session/
 
 # Project Outputs
 output/*.csv
